@@ -13,7 +13,7 @@ int GetCategories(Clist *Categories, sqlite3 *db)
     EClist *Q = NULL;
 
     sqlite3_stmt *stmt;
-    const char *query = "SELECT CategoryID, CategoryName FROM Categories;";
+    const char *query = "SELECT CategoryName FROM Categories;";
 
     if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK)
     {
@@ -25,8 +25,7 @@ int GetCategories(Clist *Categories, sqlite3 *db)
         if (sqlite3_step(stmt) == SQLITE_ROW)
         {
             (*Categories).head = malloc(sizeof(EClist));
-            (*Categories).head->category.CategoryID = sqlite3_column_int(stmt, 0);
-            strcpy((*Categories).head->category.CategoryName, (const char*)sqlite3_column_text(stmt, 1));
+            strcpy((*Categories).head->category.CategoryName, (const char*)sqlite3_column_text(stmt, 0));
             (*Categories).head->next = NULL;
             P = (*Categories).head;
             (*Categories).ElementsNumber += 1;
@@ -35,8 +34,7 @@ int GetCategories(Clist *Categories, sqlite3 *db)
         while (sqlite3_step(stmt) == SQLITE_ROW)
         {
             Q = malloc(sizeof(EClist));
-            Q->category.CategoryID = sqlite3_column_int(stmt, 0);
-            strcpy(Q->category.CategoryName, (const char*)sqlite3_column_text(stmt, 1));
+            strcpy(Q->category.CategoryName, (const char*)sqlite3_column_text(stmt, 0));
             P->next = Q;
             P = Q;
             (*Categories).ElementsNumber += 1;
@@ -54,13 +52,13 @@ int GetCategories(Clist *Categories, sqlite3 *db)
     return 0;
 }
 
-EClist* GetCategoryByID(Clist categories, int categoryID)
+EClist* GetCategoryByName(Clist categories, char categoryName[])
 {
     EClist *P = categories.head;
 
     while (P)
     {
-        if (P->category.CategoryID == categoryID)
+        if (!strcmp(P->category.CategoryName, categoryName))
         {
             return P;
         }
@@ -71,17 +69,16 @@ EClist* GetCategoryByID(Clist categories, int categoryID)
     return NULL;
 }
 
-int GetProducts(Plist *Products, sqlite3 *db, Clist categories)
+int GetProducts(Plist *Products, sqlite3 *db)
 {
     (*Products).ElementsNumber = 0;
     (*Products).head = NULL;
 
     EPlist *P = NULL;
     EPlist *Q = NULL;
-    EClist *C = NULL;
 
     sqlite3_stmt *stmt;
-    const char *query = "SELECT ProductID, ProductName, Description, Price, Stock, CategoryID FROM Products;";
+    const char *query = "SELECT ProductName, Description, Price, Stock, CategoryName FROM Products;";
 
     if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK)
     {
@@ -93,22 +90,12 @@ int GetProducts(Plist *Products, sqlite3 *db, Clist categories)
         if (sqlite3_step(stmt) == SQLITE_ROW)
         {
             (*Products).head = malloc(sizeof(EPlist));
-            (*Products).head->product.ProductID = sqlite3_column_int(stmt, 0);
-            strcpy((*Products).head->product.ProductName, (const char*)sqlite3_column_text(stmt, 1));
-            strcpy((*Products).head->product.Description, (const char*)sqlite3_column_text(stmt, 2));
-            (*Products).head->product.Price = sqlite3_column_double(stmt, 3);
-            (*Products).head->product.Stock = sqlite3_column_int(stmt, 4);
-            (*Products).head->product.CategoryID = sqlite3_column_int(stmt, 5);
-            C = GetCategoryByID(categories, (*Products).head->product.CategoryID);
-            
-            if (!C)
-            {
-                fprintf(stderr, "Internal Database Error\n");
-                return 1;
-            }
+            strcpy((*Products).head->product.ProductName, (const char*)sqlite3_column_text(stmt, 0));
+            strcpy((*Products).head->product.Description, (const char*)sqlite3_column_text(stmt, 1));
+            (*Products).head->product.Price = sqlite3_column_double(stmt, 2);
+            (*Products).head->product.Stock = sqlite3_column_int(stmt, 3);
+            strcpy((*Products).head->product.CategoryName, sqlite3_column_text(stmt, 4));
 
-            strcpy((*Products).head->product.CategoryName, C->category.CategoryName);
-            
             (*Products).head->next = NULL;
             P = (*Products).head;
             (*Products).ElementsNumber += 1;
@@ -117,21 +104,11 @@ int GetProducts(Plist *Products, sqlite3 *db, Clist categories)
         while (sqlite3_step(stmt) == SQLITE_ROW)
         {
             Q = malloc(sizeof(EPlist));
-            Q->product.ProductID = sqlite3_column_int(stmt, 0);
-            strcpy(Q->product.ProductName, (const char*)sqlite3_column_text(stmt, 1));
-            strcpy(Q->product.Description, (const char*)sqlite3_column_text(stmt, 2));
-            Q->product.Price = sqlite3_column_double(stmt, 3);
-            Q->product.Stock = sqlite3_column_int(stmt, 4);
-            Q->product.CategoryID = sqlite3_column_int(stmt, 5);
-            C = GetCategoryByID(categories, Q->product.CategoryID);
-            
-            if (!C)
-            {
-                fprintf(stderr, "Internal Database Error\n");
-                return 1;
-            }
-
-            strcpy(Q->product.CategoryName, C->category.CategoryName);
+            strcpy(Q->product.ProductName, (const char*)sqlite3_column_text(stmt, 0));
+            strcpy(Q->product.Description, (const char*)sqlite3_column_text(stmt, 1));
+            Q->product.Price = sqlite3_column_double(stmt, 2);
+            Q->product.Stock = sqlite3_column_int(stmt, 3);
+            strcpy(Q->product.CategoryName, sqlite3_column_text(stmt, 4));
             
             P->next = Q;
             P = Q;
@@ -150,13 +127,13 @@ int GetProducts(Plist *Products, sqlite3 *db, Clist categories)
     return 0;
 }
 
-EPlist* GetProductByID(Plist products, int productID)
+EPlist* GetProductByName(Plist products, char productName[])
 {
     EPlist *P = products.head;
 
     while (P)
     {
-        if (P->product.ProductID == productID)
+        if (!strcmp(P->product.ProductName, productName))
         {
             return P;
         }
@@ -176,7 +153,7 @@ int GetUsers(Ulist *Users, sqlite3 *db)
     EUlist *Q = NULL;
 
     sqlite3_stmt *stmt;
-    const char *query = "SELECT UserID, UserName, UserPassword FROM Users;";
+    const char *query = "SELECT UserName, UserPassword FROM Users;";
 
     if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK)
     {
@@ -188,9 +165,8 @@ int GetUsers(Ulist *Users, sqlite3 *db)
         if (sqlite3_step(stmt) == SQLITE_ROW)
         {
             (*Users).head = malloc(sizeof(EClist));
-            (*Users).head->User.UserID = sqlite3_column_int(stmt, 0);
-            strcpy((*Users).head->User.UserName, (const char*)sqlite3_column_text(stmt, 1));
-            strcpy((*Users).head->User.UserPassword, (const char*)sqlite3_column_text(stmt, 2));
+            strcpy((*Users).head->User.UserName, (const char*)sqlite3_column_text(stmt, 0));
+            strcpy((*Users).head->User.UserPassword, (const char*)sqlite3_column_text(stmt, 1));
             (*Users).head->next = NULL;
             P = (*Users).head;
             (*Users).ElementsNumber += 1;
@@ -199,9 +175,8 @@ int GetUsers(Ulist *Users, sqlite3 *db)
         while (sqlite3_step(stmt) == SQLITE_ROW)
         {
             Q = malloc(sizeof(EClist));
-            Q->User.UserID = sqlite3_column_int(stmt, 0);
-            strcpy(Q->User.UserName, (const char*)sqlite3_column_text(stmt, 1));
-            strcpy(Q->User.UserPassword, (const char*)sqlite3_column_text(stmt, 2));
+            strcpy(Q->User.UserName, (const char*)sqlite3_column_text(stmt, 0));
+            strcpy(Q->User.UserPassword, (const char*)sqlite3_column_text(stmt, 1));
             P->next = Q;
             P = Q;
             (*Users).ElementsNumber += 1;
@@ -218,13 +193,13 @@ int GetUsers(Ulist *Users, sqlite3 *db)
     return 0;
 }
 
-EUlist* GetUserByID(Ulist users, int userID)
+EUlist* GetUserByName(Ulist users, char userName[])
 {
     EUlist *P = users.head;
 
     while (P)
     {
-        if (P->User.UserID == userID)
+        if (!strcmp(P->User.UserName, userName))
         {
             return P;
         }
@@ -248,6 +223,23 @@ int LogInUser(Ulist users, char username[], char password[])
 
 int AddCategorie(sqlite3 *db, Category category)
 {
+    char checkQuery[2000];
+    snprintf(checkQuery, sizeof(checkQuery), "SELECT COUNT(*) FROM Categories WHERE CatagoryName = '%s';", category.CategoryName);
+    sqlite3_stmt *stmt;
+
+    if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, 0) == SQLITE_OK) {
+
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            int count = sqlite3_column_int(stmt, 0);
+            if (count > 0) {
+                sqlite3_finalize(stmt);
+                return -1;
+            }
+        }
+    }
+
+    sqlite3_finalize(stmt);
+
     char query[2000];
     snprintf(query, sizeof(query), "INSERT INTO Categories (CategoryName) Values ('%s');", category.CategoryName);
 
@@ -265,8 +257,25 @@ int AddCategorie(sqlite3 *db, Category category)
 
 int AddProduct(sqlite3 *db, Product product)
 {
+    char checkQuery[2000];
+    snprintf(checkQuery, sizeof(checkQuery), "SELECT COUNT(*) FROM Products WHERE ProductName = '%s';", product.ProductName);
+    sqlite3_stmt *stmt;
+
+    if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, 0) == SQLITE_OK) {
+
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            int count = sqlite3_column_int(stmt, 0);
+            if (count > 0) {
+                sqlite3_finalize(stmt);
+                return -1;
+            }
+        }
+    }
+
+    sqlite3_finalize(stmt);
+
     char query[2000];
-    snprintf(query, sizeof(query), "INSERT INTO Products (ProductName, Description, Price, Stock, CategoryID) Values ('%s', '%s', '%2.f', '%d', '%d');", product.ProductName, product.Description, product.Price, product.Stock, product.CategoryID);
+    snprintf(query, sizeof(query), "INSERT INTO Products (ProductName, Description, Price, Stock, CategoryID) Values ('%s', '%s', %2.f, %d, '%s');", product.ProductName, product.Description, product.Price, product.Stock, product.CategoryName);
 
     char *errMsg = 0;
     
@@ -282,6 +291,23 @@ int AddProduct(sqlite3 *db, Product product)
 
 int AddUser(sqlite3 *db, User user)
 {
+    char checkQuery[2000];
+    snprintf(checkQuery, sizeof(checkQuery), "SELECT COUNT(*) FROM Users WHERE UserName = '%s';", user.UserName);
+    sqlite3_stmt *stmt;
+
+    if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, 0) == SQLITE_OK) {
+
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            int count = sqlite3_column_int(stmt, 0);
+            if (count > 0) {
+                sqlite3_finalize(stmt);
+                return -1;
+            }
+        }
+    }
+
+    sqlite3_finalize(stmt);
+
     char query[2000];
 
     snprintf(query, sizeof(query), "INSERT INTO Users (UserName, UserPassword) VALUES ('%s', '%s');", user.UserName, user.UserPassword);
@@ -298,10 +324,10 @@ int AddUser(sqlite3 *db, User user)
     return 0;
 }
 
-int UpdatePrice(sqlite3 *db, int productID, double newPrice)
+int UpdatePrice(sqlite3 *db, char productName[], double newPrice)
 {
     char query[2000];
-    snprintf(query, sizeof(query), "UPDATE Products SET Price = %2.f WHERE ProductID = %d;", newPrice, productID);
+    snprintf(query, sizeof(query), "UPDATE Products SET Price = %2.f WHERE ProductName = '%s';", newPrice, productName);
 
     char *errMsg = 0;
     
@@ -315,10 +341,10 @@ int UpdatePrice(sqlite3 *db, int productID, double newPrice)
     return 0;
 }
 
-int UpdateStock(sqlite3 *db, int productID, int newStock)
+int UpdateStock(sqlite3 *db, char productName[], int newStock)
 {
     char query[2000];
-    snprintf(query, sizeof(query), "UPDATE Products SET Stock = %d WHERE ProductID = %d;", newStock, productID);
+    snprintf(query, sizeof(query), "UPDATE Products SET Stock = %d WHERE ProductName = '%s';", newStock, productName);
 
     char *errMsg = 0;
     
@@ -332,10 +358,10 @@ int UpdateStock(sqlite3 *db, int productID, int newStock)
     return 0;
 }
 
-int DeleteCategoryByID(sqlite3 *db, int categoryID)
+int DeleteCategoryByName(sqlite3 *db, char categoryName[])
 {
     char query[2000];
-    snprintf(query, sizeof(query), "DELETE FROM Categories WHERE CategoryID = %d;", categoryID);
+    snprintf(query, sizeof(query), "DELETE FROM Categories WHERE CategoryID = '%s';", categoryName);
 
     char *errMsg = 0;
     
@@ -349,10 +375,10 @@ int DeleteCategoryByID(sqlite3 *db, int categoryID)
     return 0;
 }
 
-int DeleteProductByID(sqlite3 *db, int productID)
+int DeleteProductByName(sqlite3 *db, char productName[])
 {
     char query[2000];
-    snprintf(query, sizeof(query), "DELETE FROM Products WHERE ProductID = %d;", productID);
+    snprintf(query, sizeof(query), "DELETE FROM Products WHERE ProductID = '%s';", productName);
 
     char *errMsg = 0;
     
@@ -366,27 +392,10 @@ int DeleteProductByID(sqlite3 *db, int productID)
     return 0;
 }
 
-int DeleteUserByID(sqlite3 *db, int userID)
+int DeleteUserByName(sqlite3 *db, char userName[])
 {
     char query[2000];
-    snprintf(query, sizeof(query), "DELETE FROM Users WHERE UserID = %d;", userID);
-
-    char *errMsg = 0;
-    
-    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", errMsg);
-        sqlite3_free(errMsg);
-        return 1;
-    }
-
-    return 0;
-}
-
-int DeleteUserByUsername(sqlite3 *db, char username[])
-{
-    char query[2000];
-    snprintf(query, sizeof(query), "DELETE FROM Users WHERE UserName = '%s';", username);
+    snprintf(query, sizeof(query), "DELETE FROM Users WHERE UserName = '%s';", userName);
 
     char *errMsg = 0;
     

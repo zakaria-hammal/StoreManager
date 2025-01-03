@@ -4,26 +4,22 @@
 typedef struct Category Category;
 struct Category
 {
-    int CategoryID;
     char CategoryName[41];
 };
 
 typedef struct Product Product;
 struct Product
 {
-    int ProductID;
     char ProductName[41];
     char Description[1001];
     double Price;
     int Stock;
-    int CategoryID;
     char CategoryName[41];
 };
 
 typedef struct User User;
 struct User
 {
-    int UserID;
     char UserName[41];
     char UserPassword[41];
 };
@@ -71,13 +67,13 @@ struct Ulist
 };
 
 int GetCategories(Clist *Categories, sqlite3 *db);
-EClist* GetCategoryByID(Clist categories, int categoryID);
+EClist* GetCategoryByName(Clist categories, char categoryName[]);
 
-int GetProducts(Plist *Products, sqlite3 *db, Clist categories);
-EPlist* GetProductByID(Plist products, int productID);
+int GetProducts(Plist *Products, sqlite3 *db);
+EPlist* GetProductByName(Plist products, char productName[]);
 
 int GetUsers(Ulist *Users, sqlite3 *db);
-EUlist* GetUserByID(Ulist users, int userID);
+EUlist* GetUserByName(Ulist users, char userName[]);
 
 int LogInUser(Ulist users, char username[], char password[]);
 
@@ -85,12 +81,11 @@ int AddCategorie(sqlite3 *db, Category category);
 int AddProduct(sqlite3 *db, Product product);
 int AddUser(sqlite3 *db, User user);
 
-int UpdatePrice(sqlite3 *db, int productID, double newPrice);
-int UpdateStock(sqlite3 *db, int productID, int newStock);
+int UpdatePrice(sqlite3 *db, char productName[], double newPrice);
+int UpdateStock(sqlite3 *db, char productName[], int newStock);
 
-int DeleteCategoryByID(sqlite3 *db, int categoryID);
-int DeleteProductByID(sqlite3 *db, int productID);
-int DeleteUserByID(sqlite3 *db, int userID);
-int DeleteUserByUsername(sqlite3 *db, char username[]);
+int DeleteCategoryByName(sqlite3 *db, char categoryName[]);
+int DeleteProductByName(sqlite3 *db, char productName[]);
+int DeleteUserByName(sqlite3 *db, char userName[]);
 
 #endif
