@@ -248,10 +248,8 @@ int LogInUser(Ulist users, char username[], char password[])
 
 int AddCategorie(sqlite3 *db, Category category)
 {
-    char query[200];
+    char query[2000];
     snprintf(query, sizeof(query), "INSERT INTO Categories (CategoryName) Values ('%s');", category.CategoryName);
-
-    char *errMsg = 0;
 
     char *errMsg = 0;
     
@@ -267,7 +265,7 @@ int AddCategorie(sqlite3 *db, Category category)
 
 int AddProduct(sqlite3 *db, Product product)
 {
-    char query[200];
+    char query[2000];
     snprintf(query, sizeof(query), "INSERT INTO Products (ProductName, Description, Price, Stock, CategoryID) Values ('%s', '%s', '%2.f', '%d', '%d');", product.ProductName, product.Description, product.Price, product.Stock, product.CategoryID);
 
     char *errMsg = 0;
@@ -284,7 +282,7 @@ int AddProduct(sqlite3 *db, Product product)
 
 int AddUser(sqlite3 *db, User user)
 {
-    char query[200];
+    char query[2000];
 
     snprintf(query, sizeof(query), "INSERT INTO Users (UserName, UserPassword) VALUES ('%s', '%s');", user.UserName, user.UserPassword);
 
@@ -302,7 +300,7 @@ int AddUser(sqlite3 *db, User user)
 
 int UpdatePrice(sqlite3 *db, int productID, double newPrice)
 {
-    char query[200];
+    char query[2000];
     snprintf(query, sizeof(query), "UPDATE Products SET Price = %2.f WHERE ProductID = %d;", newPrice, productID);
 
     char *errMsg = 0;
@@ -319,7 +317,7 @@ int UpdatePrice(sqlite3 *db, int productID, double newPrice)
 
 int UpdateStock(sqlite3 *db, int productID, int newStock)
 {
-    char query[200];
+    char query[2000];
     snprintf(query, sizeof(query), "UPDATE Products SET Stock = %d WHERE ProductID = %d;", newStock, productID);
 
     char *errMsg = 0;
@@ -336,7 +334,7 @@ int UpdateStock(sqlite3 *db, int productID, int newStock)
 
 int DeleteCategoryByID(sqlite3 *db, int categoryID)
 {
-    char query[200];
+    char query[2000];
     snprintf(query, sizeof(query), "DELETE FROM Categories WHERE CategoryID = %d;", categoryID);
 
     char *errMsg = 0;
@@ -353,7 +351,7 @@ int DeleteCategoryByID(sqlite3 *db, int categoryID)
 
 int DeleteProductByID(sqlite3 *db, int productID)
 {
-    char query[200];
+    char query[2000];
     snprintf(query, sizeof(query), "DELETE FROM Products WHERE ProductID = %d;", productID);
 
     char *errMsg = 0;
@@ -370,7 +368,7 @@ int DeleteProductByID(sqlite3 *db, int productID)
 
 int DeleteUserByID(sqlite3 *db, int userID)
 {
-    char query[200];
+    char query[2000];
     snprintf(query, sizeof(query), "DELETE FROM Users WHERE UserID = %d;", userID);
 
     char *errMsg = 0;
@@ -387,7 +385,7 @@ int DeleteUserByID(sqlite3 *db, int userID)
 
 int DeleteUserByUsername(sqlite3 *db, char username[])
 {
-    char query[200];
+    char query[2000];
     snprintf(query, sizeof(query), "DELETE FROM Users WHERE UserName = '%s';", username);
 
     char *errMsg = 0;
