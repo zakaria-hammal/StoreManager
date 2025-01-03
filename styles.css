@@ -1,0 +1,52 @@
+button { 
+    font-size: 20px; 
+    font-weight: normal; 
+    border-radius: 10px;
+    margin: 5px 5px 5px 5px;
+}
+
+button:hover { 
+    font-size: 25px; 
+    font-weight: bold;
+}
+
+.bold-label { 
+    font-size: 40px; 
+    font-weight: bold;
+}
+
+.alone-bold-label { 
+    font-size: 30px; 
+    font-weight: bold;
+}
+
+entry { 
+    min-height: 50px; 
+    font-size: 30px; 
+    font-weight: 600; 
+    padding: 10px; 
+    border-radius: 10px;
+}
+
+box {
+    padding: 15px 15px 15px 15px;
+}
+
+.username {
+    font-size: 25px;
+    font-weight: 600;
+}
+
+.title-label { 
+    color: blue;
+    font-size: 25px; 
+    font-weight: bold;
+}
+
+.correct { 
+    color: green;
+}
+
+.uncorrect { 
+    color: red;
+}
