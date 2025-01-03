@@ -14,7 +14,7 @@ CREATE TABLE "Products" (
     "Price" REAL NULL CONSTRAINT "DF_Products_Cost" DEFAULT (0),
     "Stock" INTEGER NULL CONSTRAINT "DF_Products_Stock" DEFAULT (0),
     "CategoryID" INTEGER,
-    FOREIGN KEY ("CategoryID") REFERENCES Categories("CategoryID"),
+    FOREIGN KEY ("CategoryID") REFERENCES Categories("CategoryID") ON DELETE CASCADE,
     
     CONSTRAINT "CK_Products_Cost" CHECK (Price >= 0),
     CONSTRAINT "CK_Products_Stock" CHECK (Stock >= 0)
@@ -22,7 +22,7 @@ CREATE TABLE "Products" (
 
 CREATE TABLE "Users" (
     "UserID" INTEGER PRIMARY KEY ,
-    "UserName" nvarchar (40) NOT NULL ,
+    "UserName" nvarchar (40) NOT NULL UNIQUE,
     "UserPassword" nvarchar (40) NOT NULL
 );
 

@@ -88,4 +88,9 @@ int AddUser(sqlite3 *db, User user);
 int UpdatePrice(sqlite3 *db, int productID, double newPrice);
 int UpdateStock(sqlite3 *db, int productID, int newStock);
 
+int DeleteCategoryByID(sqlite3 *db, int categoryID);
+int DeleteProductByID(sqlite3 *db, int productID);
+int DeleteUserByID(sqlite3 *db, int userID);
+int DeleteUserByUsername(sqlite3 *db, char username[]);
+
 #endif

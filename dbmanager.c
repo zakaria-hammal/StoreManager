@@ -286,7 +286,7 @@ int AddUser(sqlite3 *db, User user)
 {
     char query[200];
 
-    snprintf(query, sizeof(query), "INSERT INTO Users (UserName, UserPassword) VALUES ('%s', '%s);", user.UserName, user.UserPassword);
+    snprintf(query, sizeof(query), "INSERT INTO Users (UserName, UserPassword) VALUES ('%s', '%s');", user.UserName, user.UserPassword);
 
     char *errMsg = 0;
     
@@ -321,6 +321,74 @@ int UpdateStock(sqlite3 *db, int productID, int newStock)
 {
     char query[200];
     snprintf(query, sizeof(query), "UPDATE Products SET Stock = %d WHERE ProductID = %d;", newStock, productID);
+
+    char *errMsg = 0;
+    
+    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
+    {
+        fprintf(stderr, "SQL error: %s\n", errMsg);
+        sqlite3_free(errMsg);
+        return 1;
+    }
+
+    return 0;
+}
+
+int DeleteCategoryByID(sqlite3 *db, int categoryID)
+{
+    char query[200];
+    snprintf(query, sizeof(query), "DELETE FROM Categories WHERE CategoryID = %d;", categoryID);
+
+    char *errMsg = 0;
+    
+    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
+    {
+        fprintf(stderr, "SQL error: %s\n", errMsg);
+        sqlite3_free(errMsg);
+        return 1;
+    }
+
+    return 0;
+}
+
+int DeleteProductByID(sqlite3 *db, int productID)
+{
+    char query[200];
+    snprintf(query, sizeof(query), "DELETE FROM Products WHERE ProductID = %d;", productID);
+
+    char *errMsg = 0;
+    
+    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
+    {
+        fprintf(stderr, "SQL error: %s\n", errMsg);
+        sqlite3_free(errMsg);
+        return 1;
+    }
+
+    return 0;
+}
+
+int DeleteUserByID(sqlite3 *db, int userID)
+{
+    char query[200];
+    snprintf(query, sizeof(query), "DELETE FROM Users WHERE UserID = %d;", userID);
+
+    char *errMsg = 0;
+    
+    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
+    {
+        fprintf(stderr, "SQL error: %s\n", errMsg);
+        sqlite3_free(errMsg);
+        return 1;
+    }
+
+    return 0;
+}
+
+int DeleteUserByUsername(sqlite3 *db, char username[])
+{
+    char query[200];
+    snprintf(query, sizeof(query), "DELETE FROM Users WHERE UserName = '%s';", username);
 
     char *errMsg = 0;
     
