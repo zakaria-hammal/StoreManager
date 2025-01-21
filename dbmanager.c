@@ -388,7 +388,7 @@ int UpdateStock(sqlite3 *db, char productName[], int newStock)
 int DeleteCategoryByName(sqlite3 *db, char categoryName[])
 {
     char query[2000];
-    snprintf(query, sizeof(query), "DELETE FROM Categories WHERE CategoryID = '%s';", categoryName);
+    snprintf(query, sizeof(query), "DELETE FROM Categories WHERE CategoryName = '%s';", categoryName);
 
     char *errMsg = 0;
     

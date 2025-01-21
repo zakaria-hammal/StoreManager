@@ -55,6 +55,7 @@ Ulist Users;
 char actual_username[41];
 
 GtkWidget *window;
+GtkWidget *scrolled_window[3];
 GtkWidget *stack[3];
 GtkWidget *boxUnlogged;
 GtkWidget *boxLogged;
@@ -73,6 +74,41 @@ GtkWidget *AddCategoryLabel[4];
 GtkWidget *AddProductGrid;
 GtkWidget *AddUserGrid;
 GtkWidget *UsernameLabel;
+GtkWidget *ViewCategoriesBox;
+GtkWidget *ViewCategoriesHead;
+GtkWidget *ViewCategoriesFoot;
+GtkWidget **ViewCategoriesLabel;
+GtkWidget **NoCategoryLabel;
+GtkWidget **DeleteCategoriesButton;
+GtkWidget **ViewCategoriesSubBoxes;
+GtkWidget *ViewProductsBox;
+GtkWidget *ViewProductsHead;
+GtkWidget *ViewProductsFoot;
+GtkWidget **ViewProductsLabel;
+GtkWidget **NoProductLabel;
+GtkWidget **DeleteProductsButton;
+GtkWidget **ViewProductsSubBoxes;
+int n;
+
+static void DeleteCat(GtkWidget *widget, gpointer user_data)
+{
+    int* rang = (int*)user_data;
+
+    if(*rang < Categories.ElementsNumber)
+    {
+        EClist *P = Categories.head;
+        
+        for(int i = 0; i < *rang; i++)
+        {
+            P = P->next;
+        }
+
+        if(!DeleteCategoryByName(db, P->category.CategoryName))
+        {
+            printf("Success !!!\n");
+        }
+    }
+}
 
 static void AddCat(GtkWidget *widget, gpointer user_data)
 {
@@ -98,6 +134,99 @@ static void AddCat(GtkWidget *widget, gpointer user_data)
     {
         gtk_label_set_label(GTK_LABEL(AddCategoryLabel[2]), "Category Added Successfully");
         gtk_widget_add_css_class(GTK_WIDGET(AddCategoryLabel[2]), "correct");
+    }
+    
+}
+
+static void GoToViewCategories(GtkWidget *widget, gpointer user_data)
+{
+    if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "box_view_categories"))
+    {
+        if(gtk_widget_get_parent(GTK_WIDGET(ViewCategoriesFoot)) != NULL)
+        {
+            gtk_box_remove(GTK_BOX(ViewCategoriesBox), ViewCategoriesFoot);
+        }
+
+        if(ViewCategoriesSubBoxes)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                gtk_box_remove(GTK_BOX(ViewCategoriesSubBoxes[i]), ViewCategoriesLabel[i]);
+                gtk_box_remove(GTK_BOX(ViewCategoriesSubBoxes[i]), DeleteCategoriesButton[i]);
+
+                gtk_box_remove(GTK_BOX(ViewCategoriesBox), ViewCategoriesSubBoxes[i]);
+            }
+
+            free(ViewCategoriesSubBoxes);
+            ViewCategoriesSubBoxes = NULL;
+
+            free(ViewCategoriesLabel);
+            ViewCategoriesLabel = NULL;
+
+            free(DeleteCategoriesButton);
+            DeleteCategoriesButton = NULL;
+        }
+
+        if(NoCategoryLabel)
+        {
+            gtk_box_remove(GTK_BOX(ViewCategoriesBox), *NoCategoryLabel);
+
+            free(NoCategoryLabel);
+            NoCategoryLabel = NULL;
+        }
+
+        DestroyCategoryList(&Categories);
+        GetCategories(&Categories, db);
+
+        if(Categories.ElementsNumber)
+        {
+            ViewCategoriesSubBoxes = calloc(Categories.ElementsNumber, sizeof(GtkWidget*));
+            ViewCategoriesLabel = calloc(Categories.ElementsNumber, sizeof(GtkWidget*));
+            DeleteCategoriesButton = calloc(Categories.ElementsNumber, sizeof(GtkWidget*));
+
+            EClist *P = Categories.head;
+            for (int i = 0; i < Categories.ElementsNumber; i++)
+            {
+                ViewCategoriesSubBoxes[i] = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+                gtk_widget_set_size_request(ViewCategoriesSubBoxes[i], 600, 150);
+                ViewCategoriesLabel[i] = gtk_label_new_with_mnemonic(P->category.CategoryName);
+                gtk_widget_set_size_request(ViewCategoriesLabel[i], 400, 100);
+                gtk_widget_add_css_class(GTK_WIDGET(ViewCategoriesLabel[i]), "alone-bold-label");
+                DeleteCategoriesButton[i] = gtk_button_new_with_label("Delete");
+                gtk_widget_set_size_request(ViewCategoriesSubBoxes[i], 150, 100);
+                g_signal_connect(DeleteCategoriesButton[i], "clicked", G_CALLBACK(DeleteCat), &i);
+                
+                gtk_box_append(GTK_BOX(ViewCategoriesSubBoxes[i]), ViewCategoriesLabel[i]);
+                gtk_box_append(GTK_BOX(ViewCategoriesSubBoxes[i]), DeleteCategoriesButton[i]);
+                
+                gtk_box_append(GTK_BOX(ViewCategoriesBox), ViewCategoriesSubBoxes[i]);
+
+                P = P->next;
+            }
+        }
+        else
+        {
+            NoCategoryLabel = malloc(sizeof(GtkWidget*));
+            *NoCategoryLabel = gtk_label_new("No Catategories Added Yet\n");
+            gtk_widget_add_css_class(GTK_WIDGET(*NoCategoryLabel), "alone-bold-label");
+            gtk_box_append(GTK_BOX(ViewCategoriesBox), *NoCategoryLabel);
+        }
+
+        n = Categories.ElementsNumber;
+
+        ViewCategoriesFoot = gtk_label_new_with_mnemonic("\n");
+        gtk_box_append(GTK_BOX(ViewCategoriesBox), ViewCategoriesFoot);
+
+        gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "box_view_categories");
+    }
+    
+}
+
+static void GoToAddCategory(GtkWidget *widget, gpointer user_data)
+{
+    if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "grid_add_category"))
+    {
+        gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "grid_add_category");
     }
     
 }
@@ -269,7 +398,9 @@ static void on_activate(GtkApplication *app)
     gtk_widget_add_css_class(GTK_WIDGET(UsernameLabel), "username");
 
     LoggedBtn[0] = gtk_button_new_with_label("View Categories");
+    g_signal_connect (LoggedBtn[0], "clicked", G_CALLBACK(GoToViewCategories), NULL);
     LoggedBtn[1] = gtk_button_new_with_label("Add Categorie");
+    g_signal_connect (LoggedBtn[1], "clicked", G_CALLBACK(GoToAddCategory), NULL);
     LoggedBtn[2] = gtk_button_new_with_label("View Products");
     LoggedBtn[3] = gtk_button_new_with_label("Add Product");
     LoggedBtn[4] = gtk_button_new_with_label("View Users");
@@ -282,6 +413,23 @@ static void on_activate(GtkApplication *app)
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[3]);
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[4]);
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[5]);
+
+    // Categories :
+
+    ViewCategoriesBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    ViewCategoriesHead = gtk_label_new_with_mnemonic("\nCategories :");
+    gtk_widget_add_css_class(GTK_WIDGET(ViewCategoriesHead), "title-label");
+    ViewCategoriesFoot = gtk_label_new_with_mnemonic("\n");
+
+    gtk_box_append(GTK_BOX(ViewCategoriesBox), GTK_WIDGET(ViewCategoriesHead));
+
+    scrolled_window[0] = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window[0]), 
+                                   GTK_POLICY_NEVER,
+                                   GTK_POLICY_AUTOMATIC
+    );
+
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window[0]), ViewCategoriesBox);
 
     AddCategoryGrid = gtk_grid_new();
     gtk_grid_set_column_spacing(GTK_GRID(AddCategoryGrid), 20);
@@ -312,6 +460,7 @@ static void on_activate(GtkApplication *app)
     gtk_grid_attach(GTK_GRID(AddCategoryGrid), GTK_WIDGET(AddCategoryButton), 5, 5, 6, 1);
     gtk_grid_attach(GTK_GRID(AddCategoryGrid), GTK_WIDGET(AddCategoryLabel[3]), 0, 6, 12, 1);
 
+    gtk_stack_add_titled(GTK_STACK(stack[2]), scrolled_window[0], "box_view_categories", "ViewCategories");
     gtk_stack_add_titled(GTK_STACK(stack[2]), AddCategoryGrid, "grid_add_category", "AddCategory");
 
     gtk_widget_set_hexpand(stack[2], TRUE);
@@ -320,8 +469,8 @@ static void on_activate(GtkApplication *app)
     gtk_box_append(GTK_BOX(boxLogged), sidebar[1]);
     gtk_box_append(GTK_BOX(boxLogged), stack[2]);
 
-    gtk_stack_add_titled(GTK_STACK(stack[0]), boxUnlogged, "box_unlogged", "Unlogged");
     gtk_stack_add_titled(GTK_STACK(stack[0]), boxLogged, "box_logged", "Logged");
+    gtk_stack_add_titled(GTK_STACK(stack[0]), boxUnlogged, "box_unlogged", "Unlogged");
 
     gtk_window_set_child(GTK_WINDOW(window), stack[0]);
 
@@ -353,6 +502,10 @@ int main(int argc, char* argv[])
 
     Users.ElementsNumber = 0;
     Users.head = NULL;    
+
+    NoCategoryLabel = NULL;
+    DeleteCategoriesButton = NULL;
+    ViewCategoriesSubBoxes = NULL;
 
     GtkApplication *app;
     int status;
