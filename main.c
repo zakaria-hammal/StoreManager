@@ -71,7 +71,6 @@ GtkWidget *AddCategoryButton;
 GtkWidget *AddCategoryEntry;
 GtkEntryBuffer *AddCategoryEntryBuffer;
 GtkWidget *AddCategoryLabel[4];
-GtkWidget *AddProductGrid;
 GtkWidget *AddUserGrid;
 GtkWidget *UsernameLabel;
 GtkWidget *ViewCategoriesBox;
@@ -81,6 +80,7 @@ GtkWidget **ViewCategoriesLabel;
 GtkWidget **NoCategoryLabel;
 GtkWidget **DeleteCategoriesButton;
 GtkWidget **ViewCategoriesSubBoxes;
+GtkWidget *AddProductGrid;
 GtkWidget *ViewProductsBox;
 GtkWidget *ViewProductsHead;
 GtkWidget *ViewProductsFoot;
@@ -88,27 +88,20 @@ GtkWidget **ViewProductsLabel;
 GtkWidget **NoProductLabel;
 GtkWidget **DeleteProductsButton;
 GtkWidget **ViewProductsSubBoxes;
+GtkWidget *Dropdown;
+GtkWidget *AddProductLabel[6];
+GtkWidget *AddProductButton;
+GtkWidget *AddProductEntry[4];
+GtkEntryBuffer *AddProductEntryBuffer[3];
+GtkWidget *BlankBox;
+GListStore *store;
+GtkWidget *BlankLabel;
+
 int n;
+int n1;
 
-static void DeleteCat(GtkWidget *widget, gpointer user_data)
-{
-    int* rang = (int*)user_data;
-
-    if(*rang < Categories.ElementsNumber)
-    {
-        EClist *P = Categories.head;
-        
-        for(int i = 0; i < *rang; i++)
-        {
-            P = P->next;
-        }
-
-        if(!DeleteCategoryByName(db, P->category.CategoryName))
-        {
-            printf("Success !!!\n");
-        }
-    }
-}
+static void DeleteCat(GtkWidget *widget, gpointer user_data);
+static void DeletePro(GtkWidget *widget, gpointer user_data);
 
 static void AddCat(GtkWidget *widget, gpointer user_data)
 {
@@ -136,6 +129,140 @@ static void AddCat(GtkWidget *widget, gpointer user_data)
         gtk_widget_add_css_class(GTK_WIDGET(AddCategoryLabel[2]), "correct");
     }
     
+}
+
+static void AddPro(GtkWidget *widget, gpointer user_data)
+{
+    Product pro;
+
+    char *string_productname = g_strdup(gtk_entry_buffer_get_text(AddProductEntryBuffer[0]));
+
+    strcpy(pro.ProductName, string_productname);
+
+    char *string_desc = g_strdup(gtk_entry_buffer_get_text(AddProductEntryBuffer[1]));
+
+    strcpy(pro.Description, string_productname);
+
+    char *string_stock = g_strdup(gtk_entry_buffer_get_text(AddProductEntryBuffer[2]));
+
+    pro.Stock = atoi(string_stock);
+
+    char *string_price = g_strdup(gtk_entry_buffer_get_text(AddProductEntryBuffer[3]));
+
+    pro.Price = strtod(string_price, NULL);
+
+    GtkStringObject *string_cat = gtk_drop_down_get_selected_item(GTK_DROP_DOWN(Dropdown));
+
+    strcpy(pro.CategoryName, gtk_string_object_get_string(string_cat));
+
+    int status = AddProduct(db, pro);
+
+    if (status == -1)
+    {
+        gtk_label_set_label(GTK_LABEL(AddProductLabel[5]), "Product Name Already Exists");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddProductLabel[5]), "correct");
+        gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[5]), "uncorrect");
+    }
+    else if (status)
+    {
+        gtk_label_set_label(GTK_LABEL(AddProductLabel[5]), "Internal Server Error");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddProductLabel[5]), "correct");
+        gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[5]), "uncorrect");
+    }
+    else
+    {
+        gtk_label_set_label(GTK_LABEL(AddProductLabel[5]), "Product Added Successfully");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddProductLabel[5]), "uncorrect");
+        gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[5]), "correct");
+    }
+    
+}
+
+static void GoToViewProducts(GtkWidget *widget, gpointer user_data)
+{
+    if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "box_view_products"))
+    {
+        if(gtk_widget_get_parent(GTK_WIDGET(ViewProductsFoot)) != NULL)
+        {
+            gtk_box_remove(GTK_BOX(ViewProductsBox), ViewProductsFoot);
+        }
+
+        if(ViewProductsSubBoxes)
+        {
+            for (int i = 0; i < n1; i++)
+            {
+                gtk_box_remove(GTK_BOX(ViewProductsSubBoxes[i]), ViewProductsLabel[i]);
+                gtk_box_remove(GTK_BOX(ViewProductsSubBoxes[i]), DeleteProductsButton[i]);
+
+                gtk_box_remove(GTK_BOX(ViewProductsBox), ViewProductsSubBoxes[i]);
+            }
+
+            free(ViewProductsSubBoxes);
+            ViewProductsSubBoxes = NULL;
+
+            free(ViewProductsLabel);
+            ViewProductsLabel = NULL;
+
+            free(DeleteProductsButton);
+            DeleteProductsButton = NULL;
+        }
+
+        if(NoProductLabel)
+        {
+            gtk_box_remove(GTK_BOX(ViewProductsBox), *NoProductLabel);
+
+            free(NoProductLabel);
+            NoProductLabel = NULL;
+        }
+
+        DestroyProductList(&Products);
+        GetProducts(&Products, db);
+
+        if(Products.ElementsNumber)
+        {
+            char query[2000];
+            ViewProductsSubBoxes = calloc(Products.ElementsNumber, sizeof(GtkWidget*));
+            ViewProductsLabel = calloc(Products.ElementsNumber, sizeof(GtkWidget*));
+            DeleteProductsButton = calloc(Products.ElementsNumber, sizeof(GtkWidget*));
+
+            EPlist *P = Products.head;
+
+            for (int i = 0; i < Products.ElementsNumber; i++)
+            {
+                ViewProductsSubBoxes[i] = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+                gtk_widget_set_size_request(ViewProductsSubBoxes[i], 600, 150);
+                snprintf(query, sizeof(query), "%s \nDescription : %s \nPrice : %f \t Stock : %d", P->product.ProductName, P->product.Description, P->product.Price, P->product.Stock);
+
+                ViewProductsLabel[i] = gtk_label_new_with_mnemonic(query);
+                gtk_widget_set_size_request(ViewProductsLabel[i], 400, 100);
+                gtk_widget_add_css_class(GTK_WIDGET(ViewProductsLabel[i]), "alone-bold-label");
+                DeleteProductsButton[i] = gtk_button_new_with_label("Delete");
+                gtk_widget_set_size_request(ViewProductsSubBoxes[i], 150, 100);
+                g_signal_connect(DeleteProductsButton[i], "clicked", G_CALLBACK(DeletePro), GINT_TO_POINTER(i));
+                
+                gtk_box_append(GTK_BOX(ViewProductsSubBoxes[i]), ViewProductsLabel[i]);
+                gtk_box_append(GTK_BOX(ViewProductsSubBoxes[i]), DeleteProductsButton[i]);
+                
+                gtk_box_append(GTK_BOX(ViewProductsBox), ViewProductsSubBoxes[i]);
+
+                P = P->next;
+            }
+        }
+        else
+        {
+            NoProductLabel = malloc(sizeof(GtkWidget*));
+            *NoProductLabel = gtk_label_new("No Products Added Yet\n");
+            gtk_widget_add_css_class(GTK_WIDGET(*NoProductLabel), "alone-bold-label");
+            gtk_box_append(GTK_BOX(ViewProductsBox), *NoProductLabel);
+        }
+
+        n1 = Products.ElementsNumber;
+
+        ViewProductsFoot = gtk_label_new_with_mnemonic("\n");
+        gtk_box_append(GTK_BOX(ViewProductsBox), ViewProductsFoot);
+
+        gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "box_view_products");
+    }
 }
 
 static void GoToViewCategories(GtkWidget *widget, gpointer user_data)
@@ -183,8 +310,9 @@ static void GoToViewCategories(GtkWidget *widget, gpointer user_data)
             ViewCategoriesSubBoxes = calloc(Categories.ElementsNumber, sizeof(GtkWidget*));
             ViewCategoriesLabel = calloc(Categories.ElementsNumber, sizeof(GtkWidget*));
             DeleteCategoriesButton = calloc(Categories.ElementsNumber, sizeof(GtkWidget*));
-
+                
             EClist *P = Categories.head;
+
             for (int i = 0; i < Categories.ElementsNumber; i++)
             {
                 ViewCategoriesSubBoxes[i] = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
@@ -194,7 +322,7 @@ static void GoToViewCategories(GtkWidget *widget, gpointer user_data)
                 gtk_widget_add_css_class(GTK_WIDGET(ViewCategoriesLabel[i]), "alone-bold-label");
                 DeleteCategoriesButton[i] = gtk_button_new_with_label("Delete");
                 gtk_widget_set_size_request(ViewCategoriesSubBoxes[i], 150, 100);
-                g_signal_connect(DeleteCategoriesButton[i], "clicked", G_CALLBACK(DeleteCat), &i);
+                g_signal_connect(DeleteCategoriesButton[i], "clicked", G_CALLBACK(DeleteCat), GINT_TO_POINTER(i));
                 
                 gtk_box_append(GTK_BOX(ViewCategoriesSubBoxes[i]), ViewCategoriesLabel[i]);
                 gtk_box_append(GTK_BOX(ViewCategoriesSubBoxes[i]), DeleteCategoriesButton[i]);
@@ -222,11 +350,88 @@ static void GoToViewCategories(GtkWidget *widget, gpointer user_data)
     
 }
 
+static void DeleteCat(GtkWidget *widget, gpointer user_data)
+{
+    int rang = GPOINTER_TO_INT(user_data);
+    printf("%d\n", rang);
+
+    if(rang < Categories.ElementsNumber)
+    {
+        EClist *P = Categories.head;
+        
+        for(int i = 0; i < rang; i++)
+        {
+            P = P->next;
+        }
+
+        if(!DeleteCategoryByName(db, P->category.CategoryName))
+        {
+            printf("Success !!!\n");
+            gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "box_blank");
+            GoToViewCategories(NULL, NULL);
+        }
+    }
+}
+
+static void DeletePro(GtkWidget *widget, gpointer user_data)
+{
+    int rang = GPOINTER_TO_INT(user_data);
+    printf("%d\n", rang);
+
+    if(rang < Products.ElementsNumber)
+    {
+        EPlist *P = Products.head;
+        
+        for(int i = 0; i < rang; i++)
+        {
+            P = P->next;
+        }
+
+        if(!DeleteProductByName(db, P->product.ProductName))
+        {
+            printf("Success !!!\n");
+            gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "box_blank");
+            GoToViewProducts(NULL, NULL);
+        }
+    }
+}
+
 static void GoToAddCategory(GtkWidget *widget, gpointer user_data)
 {
     if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "grid_add_category"))
     {
         gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "grid_add_category");
+    }
+    
+}
+
+static void GoToAddProduct(GtkWidget *widget, gpointer user_data)
+{
+    if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "grid_add_product"))
+    {
+        DestroyCategoryList(&Categories);
+        GetCategories(&Categories, db);
+
+        g_list_store_remove_all(store);
+
+        EClist *P = Categories.head;
+        GtkStringObject *label;
+
+        if(!P)
+        {
+            gtk_label_set_label(GTK_LABEL(BlankLabel), "You should add Categories first !!!");
+            gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "box_blank");
+            return;
+        }
+        
+        while(P)
+        {
+            label = gtk_string_object_new(P->category.CategoryName);
+            g_list_store_append(store, label);
+            P = P->next;
+        }
+
+        gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "grid_add_product");
     }
     
 }
@@ -402,7 +607,9 @@ static void on_activate(GtkApplication *app)
     LoggedBtn[1] = gtk_button_new_with_label("Add Categorie");
     g_signal_connect (LoggedBtn[1], "clicked", G_CALLBACK(GoToAddCategory), NULL);
     LoggedBtn[2] = gtk_button_new_with_label("View Products");
+    g_signal_connect (LoggedBtn[2], "clicked", G_CALLBACK(GoToViewProducts), NULL);
     LoggedBtn[3] = gtk_button_new_with_label("Add Product");
+    g_signal_connect (LoggedBtn[3], "clicked", G_CALLBACK(GoToAddProduct), NULL);
     LoggedBtn[4] = gtk_button_new_with_label("View Users");
     LoggedBtn[5] = gtk_button_new_with_label("Add User");
 
@@ -414,10 +621,16 @@ static void on_activate(GtkApplication *app)
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[4]);
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[5]);
 
-    // Categories :
+    BlankBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    BlankLabel = gtk_label_new("");
+    gtk_widget_add_css_class(GTK_WIDGET(BlankLabel), "uncorrect");
+    gtk_widget_add_css_class(GTK_WIDGET(BlankLabel), "bold-label");
+    gtk_box_append(GTK_BOX(BlankBox), BlankLabel);
 
+    // Categories :
+    
     ViewCategoriesBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    ViewCategoriesHead = gtk_label_new_with_mnemonic("\nCategories :");
+    ViewCategoriesHead = gtk_label_new_with_mnemonic("\nCategories :\n");
     gtk_widget_add_css_class(GTK_WIDGET(ViewCategoriesHead), "title-label");
     ViewCategoriesFoot = gtk_label_new_with_mnemonic("\n");
 
@@ -462,6 +675,103 @@ static void on_activate(GtkApplication *app)
 
     gtk_stack_add_titled(GTK_STACK(stack[2]), scrolled_window[0], "box_view_categories", "ViewCategories");
     gtk_stack_add_titled(GTK_STACK(stack[2]), AddCategoryGrid, "grid_add_category", "AddCategory");
+    gtk_stack_add_titled(GTK_STACK(stack[2]), BlankBox, "box_blank", "BlankBox");
+
+    // Products :
+
+    ViewProductsBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    ViewProductsHead = gtk_label_new_with_mnemonic("\nProducts :\n");
+    gtk_widget_add_css_class(GTK_WIDGET(ViewProductsHead), "title-label");
+
+    ViewProductsFoot = gtk_label_new_with_mnemonic("\n");
+
+    gtk_box_append(GTK_BOX(ViewProductsBox), GTK_WIDGET(ViewProductsHead));
+
+    scrolled_window[1] = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window[1]), 
+                                   GTK_POLICY_NEVER,
+                                   GTK_POLICY_AUTOMATIC
+    );
+
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window[1]), ViewProductsBox);
+
+    AddProductGrid = gtk_grid_new();
+    gtk_grid_set_column_spacing(GTK_GRID(AddProductGrid), 10);
+    gtk_grid_set_row_spacing(GTK_GRID(AddProductGrid), 10);
+
+    gtk_grid_set_row_homogeneous(GTK_GRID(AddProductGrid), FALSE);
+    gtk_grid_set_column_homogeneous(GTK_GRID(AddProductGrid), FALSE);
+
+    AddProductLabel[0] = gtk_label_new("\nProduct Name :");
+    gtk_widget_set_size_request(AddProductLabel[0], 500, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[0]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(AddProductLabel[0]), 0.0);
+    AddProductLabel[1] = gtk_label_new("\nDescription :");
+    gtk_widget_set_size_request(AddProductLabel[1], 500, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[1]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(AddProductLabel[1]), 0.0);
+    AddProductLabel[2] = gtk_label_new("\nStock :");
+    gtk_widget_set_size_request(AddProductLabel[2], 200, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[2]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(AddProductLabel[2]), 0.0);
+    AddProductLabel[3] = gtk_label_new("\nPrice :");
+    gtk_widget_set_size_request(AddProductLabel[3], 200, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[3]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(AddProductLabel[3]), 0.0);
+    AddProductLabel[4] = gtk_label_new("\nCategory :");
+    gtk_widget_set_size_request(AddProductLabel[4], 500, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[4]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(AddProductLabel[4]), 0.0);
+    AddProductLabel[5] = gtk_label_new("");
+    gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[5]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(AddProductLabel[5]), 0.0);
+
+    store = g_list_store_new(GTK_TYPE_STRING_OBJECT);
+    Dropdown = gtk_drop_down_new(G_LIST_MODEL(store), NULL);
+
+    AddProductEntryBuffer[0] = gtk_entry_buffer_new(NULL, -1);
+    gtk_entry_buffer_set_max_length(GTK_ENTRY_BUFFER(AddProductEntryBuffer[0]), 40);
+
+    AddProductEntry[0] = gtk_entry_new_with_buffer(AddProductEntryBuffer[0]);
+
+    AddProductEntryBuffer[1] = gtk_entry_buffer_new(NULL, -1);
+    gtk_entry_buffer_set_max_length(GTK_ENTRY_BUFFER(AddProductEntryBuffer[1]), 1000);
+
+    AddProductEntry[1] = gtk_entry_new_with_buffer(AddProductEntryBuffer[1]);
+    gtk_widget_set_size_request(AddProductEntry[1], 500, 20);
+
+    AddProductEntryBuffer[2] = gtk_entry_buffer_new(NULL, -1);
+    gtk_entry_buffer_set_max_length(GTK_ENTRY_BUFFER(AddProductEntryBuffer[2]), 10);
+
+    AddProductEntry[2] = gtk_entry_new_with_buffer(AddProductEntryBuffer[2]);
+    gtk_widget_set_size_request(AddProductEntry[2], 200, 20);
+
+    AddProductEntryBuffer[3] = gtk_entry_buffer_new(NULL, -1);
+    gtk_entry_buffer_set_max_length(GTK_ENTRY_BUFFER(AddProductEntryBuffer[3]), 10);
+
+    AddProductEntry[3] = gtk_entry_new_with_buffer(AddProductEntryBuffer[3]);
+    gtk_widget_set_size_request(AddProductEntry[3], 200, 20);
+
+    AddProductButton = gtk_button_new_with_label("Add Product");
+    g_signal_connect(AddProductButton, "clicked", G_CALLBACK(AddPro), NULL);
+
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductLabel[0]), 1, 1, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductEntry[0]), 1, 2, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductLabel[1]), 1, 3, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductEntry[1]), 1, 4, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductLabel[4]), 1, 5, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(Dropdown), 1, 6, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductLabel[2]), 1, 7, 4, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductEntry[2]), 6, 7, 4, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductLabel[3]), 1, 8, 4, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductEntry[3]), 6, 8, 4, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductLabel[5]), 1, 9, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductButton), 5, 10, 10, 1);
+
+    gtk_stack_add_titled(GTK_STACK(stack[2]), AddProductGrid, "grid_add_product", "AddProduct");
+    gtk_stack_add_titled(GTK_STACK(stack[2]), scrolled_window[1], "box_view_products", "ViewProducts");
+
+    gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "grid_add_product");
 
     gtk_widget_set_hexpand(stack[2], TRUE);
     gtk_widget_set_vexpand(stack[2], TRUE);
@@ -506,6 +816,10 @@ int main(int argc, char* argv[])
     NoCategoryLabel = NULL;
     DeleteCategoriesButton = NULL;
     ViewCategoriesSubBoxes = NULL;
+
+    NoProductLabel = NULL;
+    DeleteProductsButton = NULL;
+    ViewProductsSubBoxes = NULL;
 
     GtkApplication *app;
     int status;

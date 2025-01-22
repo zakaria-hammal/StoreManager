@@ -290,7 +290,7 @@ int AddProduct(sqlite3 *db, Product product)
     sqlite3_finalize(stmt);
 
     char query[2000];
-    snprintf(query, sizeof(query), "INSERT INTO Products (ProductName, Description, Price, Stock, CategoryID) Values ('%s', '%s', %2.f, %d, '%s');", product.ProductName, product.Description, product.Price, product.Stock, product.CategoryName);
+    snprintf(query, sizeof(query), "INSERT INTO Products (ProductName, Description, Price, Stock, CategoryName) Values ('%s', '%s', %f, %d, '%s');", product.ProductName, product.Description, product.Price, product.Stock, product.CategoryName);
 
     char *errMsg = 0;
     
@@ -342,7 +342,7 @@ int AddUser(sqlite3 *db, User user)
 int UpdatePrice(sqlite3 *db, char productName[], double newPrice)
 {
     char query[2000];
-    snprintf(query, sizeof(query), "UPDATE Products SET Price = %2.f WHERE ProductName = '%s';", newPrice, productName);
+    snprintf(query, sizeof(query), "UPDATE Products SET Price = %f WHERE ProductName = '%s';", newPrice, productName);
 
     char *errMsg = 0;
     
@@ -411,7 +411,7 @@ int DeleteCategoryByName(sqlite3 *db, char categoryName[])
 int DeleteProductByName(sqlite3 *db, char productName[])
 {
     char query[2000];
-    snprintf(query, sizeof(query), "DELETE FROM Products WHERE ProductID = '%s';", productName);
+    snprintf(query, sizeof(query), "DELETE FROM Products WHERE ProductName = '%s';", productName);
 
     char *errMsg = 0;
     
