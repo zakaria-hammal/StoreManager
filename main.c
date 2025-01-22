@@ -61,8 +61,9 @@ GtkWidget *boxUnlogged;
 GtkWidget *boxLogged;
 GtkWidget *sidebar[2];
 GtkWidget *UnloggedBtn[2];
-GtkWidget *LoggedBtn[6];
+GtkWidget *LoggedBtn[9];
 GtkWidget *UnloggedLabel[6];
+GtkWidget *LoggedLabel;
 GtkWidget *UnloggedGrid;
 GtkWidget *UnloggedEntry[2];
 GtkEntryBuffer *UnloggedEntryBuffer[2];
@@ -92,13 +93,34 @@ GtkWidget *Dropdown;
 GtkWidget *AddProductLabel[6];
 GtkWidget *AddProductButton;
 GtkWidget *AddProductEntry[4];
-GtkEntryBuffer *AddProductEntryBuffer[3];
+GtkEntryBuffer *AddProductEntryBuffer[4];
 GtkWidget *BlankBox;
 GListStore *store;
 GtkWidget *BlankLabel;
+GtkWidget *UpdateProductGrid;
+GListStore *UpdateStore;
+GtkWidget *UpdateProductDropdown;
+GtkWidget *UpdateProductLabel[5];
+GtkWidget *UpdateProductEntry[2];
+GtkEntryBuffer *UpdateProductEntryBuffer[2];
+GtkWidget *UpdateProductButton[2];
+GtkWidget *AddUserGrid;
+GtkWidget *ViewUsersBox;
+GtkWidget *ViewUsersHead;
+GtkWidget *ViewUsersFoot;
+GtkWidget **ViewUsersLabel;
+GtkWidget **NoUserLabel;
+GtkWidget **ViewUsersSubBoxes;
+GtkWidget *Dropdown;
+GtkWidget *AddUserLabel[3];
+GtkWidget *AddUserButton;
+GtkWidget *AddUserEntry[2];
+GtkEntryBuffer *AddUserEntryBuffer[2];
+
 
 int n;
 int n1;
+int n2;
 
 static void DeleteCat(GtkWidget *widget, gpointer user_data);
 static void DeletePro(GtkWidget *widget, gpointer user_data);
@@ -117,16 +139,19 @@ static void AddCat(GtkWidget *widget, gpointer user_data)
     {
         gtk_label_set_label(GTK_LABEL(AddCategoryLabel[2]), "Category Name Already Exists");
         gtk_widget_add_css_class(GTK_WIDGET(AddCategoryLabel[2]), "uncorrect");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddCategoryLabel[2]), "correct");
     }
     else if (status)
     {
         gtk_label_set_label(GTK_LABEL(AddCategoryLabel[2]), "Internal Server Error");
         gtk_widget_add_css_class(GTK_WIDGET(AddCategoryLabel[2]), "uncorrect");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddCategoryLabel[2]), "correct");
     }
     else
     {
         gtk_label_set_label(GTK_LABEL(AddCategoryLabel[2]), "Category Added Successfully");
         gtk_widget_add_css_class(GTK_WIDGET(AddCategoryLabel[2]), "correct");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddCategoryLabel[2]), "uncorrect");
     }
     
 }
@@ -141,7 +166,7 @@ static void AddPro(GtkWidget *widget, gpointer user_data)
 
     char *string_desc = g_strdup(gtk_entry_buffer_get_text(AddProductEntryBuffer[1]));
 
-    strcpy(pro.Description, string_productname);
+    strcpy(pro.Description, string_desc);
 
     char *string_stock = g_strdup(gtk_entry_buffer_get_text(AddProductEntryBuffer[2]));
 
@@ -160,22 +185,134 @@ static void AddPro(GtkWidget *widget, gpointer user_data)
     if (status == -1)
     {
         gtk_label_set_label(GTK_LABEL(AddProductLabel[5]), "Product Name Already Exists");
-        gtk_widget_remove_css_class(GTK_WIDGET(AddProductLabel[5]), "correct");
         gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[5]), "uncorrect");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddProductLabel[5]), "correct");
     }
     else if (status)
     {
         gtk_label_set_label(GTK_LABEL(AddProductLabel[5]), "Internal Server Error");
-        gtk_widget_remove_css_class(GTK_WIDGET(AddProductLabel[5]), "correct");
         gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[5]), "uncorrect");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddProductLabel[5]), "correct");
     }
     else
     {
         gtk_label_set_label(GTK_LABEL(AddProductLabel[5]), "Product Added Successfully");
-        gtk_widget_remove_css_class(GTK_WIDGET(AddProductLabel[5]), "uncorrect");
         gtk_widget_add_css_class(GTK_WIDGET(AddProductLabel[5]), "correct");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddProductLabel[5]), "uncorrect");
     }
     
+}
+
+static void AddUs(GtkWidget *widget, gpointer user_data)
+{
+    User user;
+
+    char *string_username = g_strdup(gtk_entry_buffer_get_text(AddUserEntryBuffer[0]));
+
+    strcpy(user.UserName, string_username);
+
+    char *string_pass = g_strdup(gtk_entry_buffer_get_text(AddUserEntryBuffer[1]));
+
+    strcpy(user.UserPassword, string_pass);
+
+    int status = AddUser(db, user);
+
+    if (status == -1)
+    {
+        gtk_label_set_label(GTK_LABEL(AddUserLabel[2]), "User Name Already Exists");
+        gtk_widget_add_css_class(GTK_WIDGET(AddUserLabel[2]), "uncorrect");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddUserLabel[2]), "correct");
+    }
+    else if (status)
+    {
+        gtk_label_set_label(GTK_LABEL(AddUserLabel[2]), "Internal Server Error");
+        gtk_widget_add_css_class(GTK_WIDGET(AddUserLabel[2]), "uncorrect");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddUserLabel[2]), "correct");
+    }
+    else
+    {
+        gtk_label_set_label(GTK_LABEL(AddUserLabel[2]), "User Added Successfully");
+        gtk_widget_add_css_class(GTK_WIDGET(AddUserLabel[2]), "correct");
+        gtk_widget_remove_css_class(GTK_WIDGET(AddUserLabel[2]), "uncorrect");
+    }
+    
+}
+
+static void GoToViewUsers(GtkWidget *widget, gpointer user_data)
+{
+    if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "box_view_users"))
+    {
+        if(gtk_widget_get_parent(GTK_WIDGET(ViewUsersFoot)) != NULL)
+        {
+            gtk_box_remove(GTK_BOX(ViewUsersBox), ViewUsersFoot);
+        }
+
+        if(ViewUsersSubBoxes)
+        {
+            for (int i = 0; i < n2; i++)
+            {
+                gtk_box_remove(GTK_BOX(ViewUsersSubBoxes[i]), ViewUsersLabel[i]);
+
+                gtk_box_remove(GTK_BOX(ViewUsersBox), ViewUsersSubBoxes[i]);
+            }
+
+            free(ViewUsersSubBoxes);
+            ViewUsersSubBoxes = NULL;
+
+            free(ViewUsersLabel);
+            ViewUsersLabel = NULL;
+
+        }
+
+        if(NoUserLabel)
+        {
+            gtk_box_remove(GTK_BOX(ViewUsersBox), *NoUserLabel);
+
+            free(NoUserLabel);
+            NoUserLabel = NULL;
+        }
+
+        DestroyUserList(&Users);
+        GetUsers(&Users, db);
+
+        if(Users.ElementsNumber)
+        {
+            ViewUsersSubBoxes = calloc(Users.ElementsNumber, sizeof(GtkWidget*));
+            ViewUsersLabel = calloc(Users.ElementsNumber, sizeof(GtkWidget*));
+
+            EUlist *P = Users.head;
+
+            for (int i = 0; i < Users.ElementsNumber; i++)
+            {
+                ViewUsersSubBoxes[i] = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+                gtk_widget_set_size_request(ViewUsersSubBoxes[i], 600, 150);
+                ViewUsersLabel[i] = gtk_label_new_with_mnemonic(P->User.UserName);
+                gtk_widget_set_size_request(ViewUsersLabel[i], 400, 100);
+                gtk_widget_add_css_class(GTK_WIDGET(ViewUsersLabel[i]), "alone-bold-label");
+                gtk_widget_set_size_request(ViewUsersSubBoxes[i], 150, 100);
+                
+                gtk_box_append(GTK_BOX(ViewUsersSubBoxes[i]), ViewUsersLabel[i]);
+                
+                gtk_box_append(GTK_BOX(ViewUsersBox), ViewUsersSubBoxes[i]);
+
+                P = P->next;
+            }
+        }
+        else
+        {
+            NoUserLabel = malloc(sizeof(GtkWidget*));
+            *NoUserLabel = gtk_label_new("No Users Added Yet\n");
+            gtk_widget_add_css_class(GTK_WIDGET(*NoUserLabel), "alone-bold-label");
+            gtk_box_append(GTK_BOX(ViewUsersBox), *NoUserLabel);
+        }
+
+        n2 = Users.ElementsNumber;
+
+        ViewUsersFoot = gtk_label_new_with_mnemonic("\n");
+        gtk_box_append(GTK_BOX(ViewUsersBox), ViewUsersFoot);
+
+        gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "box_view_users");
+    }
 }
 
 static void GoToViewProducts(GtkWidget *widget, gpointer user_data)
@@ -367,6 +504,7 @@ static void DeleteCat(GtkWidget *widget, gpointer user_data)
         if(!DeleteCategoryByName(db, P->category.CategoryName))
         {
             printf("Success !!!\n");
+            gtk_label_set_label(GTK_LABEL(BlankLabel), "");
             gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "box_blank");
             GoToViewCategories(NULL, NULL);
         }
@@ -390,14 +528,37 @@ static void DeletePro(GtkWidget *widget, gpointer user_data)
         if(!DeleteProductByName(db, P->product.ProductName))
         {
             printf("Success !!!\n");
+            gtk_label_set_label(GTK_LABEL(BlankLabel), "");
             gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "box_blank");
             GoToViewProducts(NULL, NULL);
         }
     }
 }
 
+static void UpdateProStock(GtkWidget *widget, gpointer user_data)
+{
+    if(!UpdateStock(db, (char*)gtk_string_object_get_string(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(UpdateProductDropdown))), atoi(g_strdup(gtk_entry_buffer_get_text(UpdateProductEntryBuffer[1])))))
+    {
+        gtk_label_set_label(GTK_LABEL(UpdateProductLabel[3]), "Product Stock Updated Successfully");
+        gtk_widget_add_css_class(GTK_WIDGET(UpdateProductLabel[3]), "correct");
+        gtk_widget_remove_css_class(GTK_WIDGET(UpdateProductLabel[3]), "uncorrect");
+    }
+}
+
+static void UpdateProPrice(GtkWidget *widget, gpointer user_data)
+{
+    if(!UpdatePrice(db, (char*)gtk_string_object_get_string(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(UpdateProductDropdown))), strtod(g_strdup(gtk_entry_buffer_get_text(UpdateProductEntryBuffer[0])), NULL)))
+    {
+        gtk_label_set_label(GTK_LABEL(UpdateProductLabel[3]), "Product Price Updated Successfully");
+        gtk_widget_add_css_class(GTK_WIDGET(UpdateProductLabel[3]), "correct");
+        gtk_widget_remove_css_class(GTK_WIDGET(UpdateProductLabel[3]), "uncorrect");
+    }
+}
+
 static void GoToAddCategory(GtkWidget *widget, gpointer user_data)
 {
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(AddCategoryEntryBuffer), "", 0);
+    gtk_label_set_label(GTK_LABEL(AddCategoryLabel[2]), "");
     if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "grid_add_category"))
     {
         gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "grid_add_category");
@@ -405,8 +566,27 @@ static void GoToAddCategory(GtkWidget *widget, gpointer user_data)
     
 }
 
+static void GoToAddUser(GtkWidget *widget, gpointer user_data)
+{
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(AddUserEntryBuffer[0]), "", 0);
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(AddUserEntryBuffer[1]), "", 0);
+    gtk_label_set_label(GTK_LABEL(AddUserLabel[2]), "");
+    if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "grid_add_user"))
+    {
+        gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "grid_add_user");
+    }
+    
+}
+
 static void GoToAddProduct(GtkWidget *widget, gpointer user_data)
 {
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(AddProductEntryBuffer[0]), "", 0);
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(AddProductEntryBuffer[1]), "", 0);
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(AddProductEntryBuffer[2]), "", 0);
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(AddProductEntryBuffer[3]), "", 0);
+    gtk_label_set_label(GTK_LABEL(AddProductLabel[5]), "");
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(Dropdown), 0);
+
     if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "grid_add_product"))
     {
         DestroyCategoryList(&Categories);
@@ -436,8 +616,47 @@ static void GoToAddProduct(GtkWidget *widget, gpointer user_data)
     
 }
 
+static void GoToUpdateProduct(GtkWidget *widget, gpointer user_data)
+{
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(UpdateProductEntryBuffer[0]), "", 0);
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(UpdateProductEntryBuffer[1]), "", 0);
+    gtk_label_set_label(GTK_LABEL(AddProductLabel[5]), "");
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(UpdateProductDropdown), 0);
+
+    if (strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "grid_update_product"))
+    {
+        DestroyProductList(&Products);
+        GetProducts(&Products, db);
+
+        g_list_store_remove_all(UpdateStore);
+
+        EPlist *P = Products.head;
+        GtkStringObject *label;
+
+        if(!P)
+        {
+            gtk_label_set_label(GTK_LABEL(BlankLabel), "You should add Products first !!!");
+            gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "box_blank");
+            return;
+        }
+        
+        while(P)
+        {
+            label = gtk_string_object_new(P->product.ProductName);
+            g_list_store_append(UpdateStore, label);
+            P = P->next;
+        }
+
+        gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "grid_update_product");
+    }
+    
+}
+
 static void GoToLogin(GtkWidget *widget, gpointer user_data)
 {
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(UnloggedEntryBuffer[0]), "", 0);
+    gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(UnloggedEntryBuffer[1]), "", 0);
+
     if(strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[1])), "grid_unlogged"))
     {
         gtk_stack_set_visible_child_name(GTK_STACK(stack[1]), "grid_unlogged");
@@ -455,6 +674,14 @@ static void GoToUnloggedAbout(GtkWidget *widget, gpointer user_data)
         gtk_widget_remove_css_class(GTK_WIDGET(UnloggedLabel[3]), "uncorrect");
         gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(UnloggedEntryBuffer[0]), "", 0);
         gtk_entry_buffer_set_text(GTK_ENTRY_BUFFER(UnloggedEntryBuffer[1]), "", 0);
+    }
+}
+
+static void GoToLoggedAbout(GtkWidget *widget, gpointer user_data)
+{
+    if(strcmp(gtk_stack_get_visible_child_name(GTK_STACK(stack[2])), "label_logged"))
+    {
+        gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "label_logged");
     }
 }
 
@@ -494,6 +721,11 @@ static void Login(GtkWidget *widget, gpointer user_data)
     }
     
     DestroyUserList(&Users);
+}
+
+static void UnLog(GtkWidget *widget, gpointer user_data)
+{
+    gtk_stack_set_visible_child_name(GTK_STACK(stack[0]), "box_unlogged");
 }
 
 static void on_activate(GtkApplication *app)
@@ -602,6 +834,12 @@ static void on_activate(GtkApplication *app)
     UsernameLabel = gtk_label_new_with_mnemonic("");
     gtk_widget_add_css_class(GTK_WIDGET(UsernameLabel), "username");
 
+    LoggedLabel = gtk_label_new_with_mnemonic("This a simple C program that manages a store\n\nCreated By Zakaria Hammal");
+    gtk_widget_add_css_class(GTK_WIDGET(LoggedLabel), "alone-bold-label");
+
+    gtk_widget_set_hexpand(LoggedLabel, TRUE);
+    gtk_widget_set_vexpand(LoggedLabel, TRUE);
+
     LoggedBtn[0] = gtk_button_new_with_label("View Categories");
     g_signal_connect (LoggedBtn[0], "clicked", G_CALLBACK(GoToViewCategories), NULL);
     LoggedBtn[1] = gtk_button_new_with_label("Add Categorie");
@@ -610,16 +848,29 @@ static void on_activate(GtkApplication *app)
     g_signal_connect (LoggedBtn[2], "clicked", G_CALLBACK(GoToViewProducts), NULL);
     LoggedBtn[3] = gtk_button_new_with_label("Add Product");
     g_signal_connect (LoggedBtn[3], "clicked", G_CALLBACK(GoToAddProduct), NULL);
-    LoggedBtn[4] = gtk_button_new_with_label("View Users");
-    LoggedBtn[5] = gtk_button_new_with_label("Add User");
+    LoggedBtn[4] = gtk_button_new_with_label("Update Product");
+    g_signal_connect (LoggedBtn[4], "clicked", G_CALLBACK(GoToUpdateProduct), NULL);
+    LoggedBtn[5] = gtk_button_new_with_label("View Users");
+    g_signal_connect (LoggedBtn[5], "clicked", G_CALLBACK(GoToViewUsers), NULL);
+    LoggedBtn[6] = gtk_button_new_with_label("Add User");
+    g_signal_connect (LoggedBtn[6], "clicked", G_CALLBACK(GoToAddUser), NULL);
+    LoggedBtn[7] = gtk_button_new_with_label("Diconnect");
+    g_signal_connect (LoggedBtn[7], "clicked", G_CALLBACK(UnLog), NULL);
+    LoggedBtn[8] = gtk_button_new_with_label("About");
+    g_signal_connect (LoggedBtn[8], "clicked", G_CALLBACK(GoToLoggedAbout), NULL);
 
     gtk_box_append(GTK_BOX(sidebar[1]), UsernameLabel);
+    gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[8]);
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[0]);
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[1]);
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[2]);
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[3]);
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[4]);
     gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[5]);
+    gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[6]);
+    gtk_box_append(GTK_BOX(sidebar[1]), LoggedBtn[7]);
+
+    gtk_stack_add_titled(GTK_STACK(stack[2]), LoggedLabel, "label_logged", "loggedAbout");
 
     BlankBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     BlankLabel = gtk_label_new("");
@@ -768,10 +1019,131 @@ static void on_activate(GtkApplication *app)
     gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductLabel[5]), 1, 9, 10, 1);
     gtk_grid_attach(GTK_GRID(AddProductGrid), GTK_WIDGET(AddProductButton), 5, 10, 10, 1);
 
+    UpdateProductGrid = gtk_grid_new();
+    gtk_grid_set_column_spacing(GTK_GRID(UpdateProductGrid), 10);
+    gtk_grid_set_row_spacing(GTK_GRID(UpdateProductGrid), 10);
+
+    gtk_grid_set_row_homogeneous(GTK_GRID(UpdateProductGrid), FALSE);
+    gtk_grid_set_column_homogeneous(GTK_GRID(UpdateProductGrid), FALSE);
+
+    UpdateProductLabel[0] = gtk_label_new("\nProduct Name :");
+    gtk_widget_set_size_request(UpdateProductLabel[0], 500, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(UpdateProductLabel[0]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(UpdateProductLabel[0]), 0.0);
+
+    UpdateProductLabel[1] = gtk_label_new("\nNew Price :");
+    gtk_widget_set_size_request(UpdateProductLabel[1], 500, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(UpdateProductLabel[1]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(UpdateProductLabel[1]), 0.0);
+
+    UpdateProductLabel[2] = gtk_label_new("\nNew Stock :");
+    gtk_widget_set_size_request(UpdateProductLabel[2], 500, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(UpdateProductLabel[2]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(UpdateProductLabel[2]), 0.0);
+
+    UpdateProductLabel[3] = gtk_label_new("");
+    gtk_widget_add_css_class(GTK_WIDGET(UpdateProductLabel[3]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(UpdateProductLabel[3]), 0.0);
+
+    UpdateStore = g_list_store_new(GTK_TYPE_STRING_OBJECT);
+    UpdateProductDropdown = gtk_drop_down_new(G_LIST_MODEL(UpdateStore), NULL);
+
+    UpdateProductEntryBuffer[0] = gtk_entry_buffer_new(NULL, -1);
+    gtk_entry_buffer_set_max_length(GTK_ENTRY_BUFFER(UpdateProductEntryBuffer[0]), 10);
+
+    UpdateProductEntry[0] = gtk_entry_new_with_buffer(UpdateProductEntryBuffer[0]);
+    gtk_widget_set_size_request(UpdateProductEntry[0], 200, 20);
+
+    UpdateProductEntryBuffer[1] = gtk_entry_buffer_new(NULL, -1);
+    gtk_entry_buffer_set_max_length(GTK_ENTRY_BUFFER(UpdateProductEntryBuffer[1]), 10);
+
+    UpdateProductEntry[1] = gtk_entry_new_with_buffer(UpdateProductEntryBuffer[1]);
+    gtk_widget_set_size_request(UpdateProductEntry[1], 200, 20);
+
+    UpdateProductButton[0] = gtk_button_new_with_label("Update Stock");
+    g_signal_connect(UpdateProductButton[0], "clicked", G_CALLBACK(UpdateProStock), NULL);
+    UpdateProductButton[1] = gtk_button_new_with_label("Update Price");
+    g_signal_connect(UpdateProductButton[1], "clicked", G_CALLBACK(UpdateProPrice), NULL);
+
+    gtk_grid_attach(GTK_GRID(UpdateProductGrid), GTK_WIDGET(UpdateProductLabel[0]), 1, 1, 10, 1);
+    gtk_grid_attach(GTK_GRID(UpdateProductGrid), GTK_WIDGET(UpdateProductDropdown), 1, 2, 10, 1);
+    gtk_grid_attach(GTK_GRID(UpdateProductGrid), GTK_WIDGET(UpdateProductLabel[1]), 1, 3, 10, 1);
+    gtk_grid_attach(GTK_GRID(UpdateProductGrid), GTK_WIDGET(UpdateProductEntry[0]), 1, 4, 10, 1);
+    gtk_grid_attach(GTK_GRID(UpdateProductGrid), GTK_WIDGET(UpdateProductLabel[2]), 1, 5, 10, 1);
+    gtk_grid_attach(GTK_GRID(UpdateProductGrid), GTK_WIDGET(UpdateProductEntry[1]), 1, 6, 10, 1);
+    gtk_grid_attach(GTK_GRID(UpdateProductGrid), GTK_WIDGET(UpdateProductLabel[3]), 1, 7, 10, 1);
+    gtk_grid_attach(GTK_GRID(UpdateProductGrid), GTK_WIDGET(UpdateProductButton[0]), 1, 8, 5, 1);
+    gtk_grid_attach(GTK_GRID(UpdateProductGrid), GTK_WIDGET(UpdateProductButton[1]), 7, 8, 5, 1);
+
+    gtk_stack_add_titled(GTK_STACK(stack[2]), UpdateProductGrid, "grid_update_product", "UpdateProduct");
     gtk_stack_add_titled(GTK_STACK(stack[2]), AddProductGrid, "grid_add_product", "AddProduct");
     gtk_stack_add_titled(GTK_STACK(stack[2]), scrolled_window[1], "box_view_products", "ViewProducts");
 
-    gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "grid_add_product");
+    // Users :
+
+    ViewUsersBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    ViewUsersHead = gtk_label_new_with_mnemonic("\nUsers :\n");
+    gtk_widget_add_css_class(GTK_WIDGET(ViewUsersHead), "title-label");
+
+    ViewUsersFoot = gtk_label_new_with_mnemonic("\n");
+
+    gtk_box_append(GTK_BOX(ViewUsersBox), GTK_WIDGET(ViewUsersHead));
+
+    scrolled_window[2] = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window[2]), 
+                                   GTK_POLICY_NEVER,
+                                   GTK_POLICY_AUTOMATIC
+    );
+
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window[2]), ViewUsersBox);
+
+    AddUserGrid = gtk_grid_new();
+    gtk_grid_set_column_spacing(GTK_GRID(AddUserGrid), 10);
+    gtk_grid_set_row_spacing(GTK_GRID(AddUserGrid), 10);
+
+    gtk_grid_set_row_homogeneous(GTK_GRID(AddUserGrid), FALSE);
+    gtk_grid_set_column_homogeneous(GTK_GRID(AddUserGrid), FALSE);
+
+    AddUserLabel[0] = gtk_label_new("\nUser Name :");
+    gtk_widget_set_size_request(AddUserLabel[0], 500, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(AddUserLabel[0]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(AddUserLabel[0]), 0.0);
+    AddUserLabel[1] = gtk_label_new("\nPassword :");
+    gtk_widget_set_size_request(AddUserLabel[1], 500, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(AddUserLabel[1]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(AddUserLabel[1]), 0.0);
+    AddUserLabel[2] = gtk_label_new("");
+    gtk_widget_set_size_request(AddUserLabel[2], 200, 20);
+    gtk_widget_add_css_class(GTK_WIDGET(AddUserLabel[2]), "bold-label");
+    gtk_label_set_xalign(GTK_LABEL(AddUserLabel[2]), 0.0);
+
+    AddUserEntryBuffer[0] = gtk_entry_buffer_new(NULL, -1);
+    gtk_entry_buffer_set_max_length(GTK_ENTRY_BUFFER(AddUserEntryBuffer[0]), 40);
+
+    AddUserEntry[0] = gtk_entry_new_with_buffer(AddUserEntryBuffer[0]);
+
+    AddUserEntryBuffer[1] = gtk_entry_buffer_new(NULL, -1);
+    gtk_entry_buffer_set_max_length(GTK_ENTRY_BUFFER(AddUserEntryBuffer[1]), 40);
+
+    AddUserEntry[1] = gtk_entry_new_with_buffer(AddUserEntryBuffer[1]);
+    gtk_widget_set_size_request(AddUserEntry[1], 500, 20);
+
+    AddUserEntryBuffer[2] = gtk_entry_buffer_new(NULL, -1);
+
+    AddUserButton = gtk_button_new_with_label("Add Product");
+    g_signal_connect(AddUserButton, "clicked", G_CALLBACK(AddUs), NULL);
+
+    gtk_grid_attach(GTK_GRID(AddUserGrid), GTK_WIDGET(AddUserLabel[0]), 1, 1, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddUserGrid), GTK_WIDGET(AddUserEntry[0]), 1, 2, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddUserGrid), GTK_WIDGET(AddUserLabel[1]), 1, 3, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddUserGrid), GTK_WIDGET(AddUserEntry[1]), 1, 4, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddUserGrid), GTK_WIDGET(AddUserLabel[2]), 1, 5, 10, 1);
+    gtk_grid_attach(GTK_GRID(AddUserGrid), GTK_WIDGET(AddUserButton), 5, 6, 4, 1);
+
+    gtk_stack_add_titled(GTK_STACK(stack[2]), scrolled_window[2], "box_view_users", "ViewUsers");
+    gtk_stack_add_titled(GTK_STACK(stack[2]), AddUserGrid, "grid_add_user", "AddUser");
+
+    gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "label_logged");
 
     gtk_widget_set_hexpand(stack[2], TRUE);
     gtk_widget_set_vexpand(stack[2], TRUE);
@@ -781,6 +1153,8 @@ static void on_activate(GtkApplication *app)
 
     gtk_stack_add_titled(GTK_STACK(stack[0]), boxLogged, "box_logged", "Logged");
     gtk_stack_add_titled(GTK_STACK(stack[0]), boxUnlogged, "box_unlogged", "Unlogged");
+
+    gtk_stack_set_visible_child_name(GTK_STACK(stack[0]), "box_unlogged");
 
     gtk_window_set_child(GTK_WINDOW(window), stack[0]);
 
@@ -820,6 +1194,9 @@ int main(int argc, char* argv[])
     NoProductLabel = NULL;
     DeleteProductsButton = NULL;
     ViewProductsSubBoxes = NULL;
+
+    NoUserLabel = NULL;
+    ViewUsersSubBoxes = NULL;
 
     GtkApplication *app;
     int status;
