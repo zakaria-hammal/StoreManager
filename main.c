@@ -713,6 +713,7 @@ static void Login(GtkWidget *widget, gpointer user_data)
         
         gtk_label_set_label(GTK_LABEL(UsernameLabel), actual_username);
 
+        gtk_stack_set_visible_child_name(GTK_STACK(stack[2]), "label_logged");
         gtk_stack_set_visible_child_name(GTK_STACK(stack[0]), "box_logged");
 
         gtk_label_set_label(GTK_LABEL(UnloggedLabel[3]), "");
@@ -1166,6 +1167,58 @@ static void on_app_shutdown(GApplication *app, gpointer user_data)
     DestroyCategoryList(&Categories);
     DestroyProductList(&Products);
     DestroyUserList(&Users);
+
+    if(ViewUsersSubBoxes)
+    {
+        free(ViewUsersSubBoxes);
+        ViewUsersSubBoxes = NULL;
+
+        free(ViewUsersLabel);
+        ViewUsersLabel = NULL;
+
+    }
+
+    if(NoUserLabel)
+    {
+        free(NoUserLabel);
+        NoUserLabel = NULL;
+    }
+
+    if(ViewProductsSubBoxes)
+    {
+        free(ViewProductsSubBoxes);
+        ViewProductsSubBoxes = NULL;
+
+        free(ViewProductsLabel);
+        ViewProductsLabel = NULL;
+
+        free(DeleteProductsButton);
+        DeleteProductsButton = NULL;
+    }
+
+    if(NoProductLabel)
+    {
+        free(NoProductLabel);
+        NoProductLabel = NULL;
+    }
+
+    if(ViewCategoriesSubBoxes)
+    {
+        free(ViewCategoriesSubBoxes);
+        ViewCategoriesSubBoxes = NULL;
+
+        free(ViewCategoriesLabel);
+        ViewCategoriesLabel = NULL;
+
+        free(DeleteCategoriesButton);
+        DeleteCategoriesButton = NULL;
+    }
+
+    if(NoCategoryLabel)
+    {
+        free(NoCategoryLabel);
+        NoCategoryLabel = NULL;
+    }
 }
 
 int main(int argc, char* argv[])
