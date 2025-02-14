@@ -770,7 +770,7 @@ static void on_activate(GtkApplication *app)
     gtk_box_append(GTK_BOX(sidebar[0]), UnloggedBtn[0]);
     gtk_box_append(GTK_BOX(sidebar[0]), UnloggedBtn[1]);
 
-    UnloggedLabel[0] = gtk_label_new_with_mnemonic("This a simple C program that manages a store\n\nCreated By Zakaria Hammal");
+    UnloggedLabel[0] = gtk_label_new_with_mnemonic("This is a simple C program that manages a store\n\nCreated By Zakaria Hammal");
     gtk_widget_add_css_class(GTK_WIDGET(UnloggedLabel[0]), "alone-bold-label");
 
     gtk_widget_set_hexpand(UnloggedLabel[0], TRUE);
@@ -835,7 +835,7 @@ static void on_activate(GtkApplication *app)
     UsernameLabel = gtk_label_new_with_mnemonic("");
     gtk_widget_add_css_class(GTK_WIDGET(UsernameLabel), "username");
 
-    LoggedLabel = gtk_label_new_with_mnemonic("This a simple C program that manages a store\n\nCreated By Zakaria Hammal");
+    LoggedLabel = gtk_label_new_with_mnemonic("This is a simple C program that manages a store\n\nCreated By Zakaria Hammal");
     gtk_widget_add_css_class(GTK_WIDGET(LoggedLabel), "alone-bold-label");
 
     gtk_widget_set_hexpand(LoggedLabel, TRUE);
@@ -855,7 +855,7 @@ static void on_activate(GtkApplication *app)
     g_signal_connect (LoggedBtn[5], "clicked", G_CALLBACK(GoToViewUsers), NULL);
     LoggedBtn[6] = gtk_button_new_with_label("Add User");
     g_signal_connect (LoggedBtn[6], "clicked", G_CALLBACK(GoToAddUser), NULL);
-    LoggedBtn[7] = gtk_button_new_with_label("Diconnect");
+    LoggedBtn[7] = gtk_button_new_with_label("Disconnect");
     g_signal_connect (LoggedBtn[7], "clicked", G_CALLBACK(UnLog), NULL);
     LoggedBtn[8] = gtk_button_new_with_label("About");
     g_signal_connect (LoggedBtn[8], "clicked", G_CALLBACK(GoToLoggedAbout), NULL);
