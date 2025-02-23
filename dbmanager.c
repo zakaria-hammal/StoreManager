@@ -223,135 +223,136 @@ int LogInUser(Ulist users, char username[], char password[])
 
 int AddCategorie(sqlite3 *db, Category category)
 {
-    char checkQuery[2000];
-    snprintf(checkQuery, sizeof(checkQuery), "SELECT COUNT(*) FROM Categories WHERE CategoryName = '%s';", category.CategoryName);
     sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db,
+        "SELECT COUNT(*) FROM Categories WHERE CategoryName = ?;",
+        -1, &stmt, NULL
+    );
 
-    if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, 0) == SQLITE_OK) 
-    {
+    sqlite3_bind_text(stmt, 1, category.CategoryName, -1, SQLITE_STATIC);
 
-        if (sqlite3_step(stmt) == SQLITE_ROW) {
-            int count = sqlite3_column_int(stmt, 0);
-            if (count > 0) {
-                sqlite3_finalize(stmt);
-                return -1;
-            }
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        int count = sqlite3_column_int(stmt, 0);
+        if (count > 0) {
+            sqlite3_finalize(stmt);
+            return -1;
         }
     }
 
     sqlite3_finalize(stmt);
-
-    char query[2000];
-    snprintf(query, sizeof(query), "INSERT INTO Categories (CategoryName) Values ('%s');", category.CategoryName);
-
-    char *errMsg = 0;
     
-    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", errMsg);
-        sqlite3_free(errMsg);
-        return 1;
-    }
+    sqlite3_prepare_v2(db,
+        "INSERT INTO Categories (CategoryName) Values (?);",
+        -1, &stmt, NULL
+    );
+
+    sqlite3_bind_text(stmt, 1, category.CategoryName, -1, SQLITE_STATIC);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
     return 0;
 }
 
 int AddProduct(sqlite3 *db, Product product)
 {
-    char checkQuery[2000];
-    snprintf(checkQuery, sizeof(checkQuery), "SELECT COUNT(*) FROM Products WHERE ProductName = '%s';", product.ProductName);
     sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db,
+        "SELECT COUNT(*) FROM Products WHERE ProductName = ?;",
+        -1, &stmt, NULL
+    );
 
-    if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, 0) == SQLITE_OK) {
-
-        if (sqlite3_step(stmt) == SQLITE_ROW) {
-            int count = sqlite3_column_int(stmt, 0);
-            if (count > 0) {
-                sqlite3_finalize(stmt);
-                return -1;
-            }
-        }
-    }
-
-    strcpy(checkQuery, "");
-    snprintf(checkQuery, sizeof(checkQuery), "SELECT COUNT(*) FROM Categories WHERE CategoryName = '%s';", product.CategoryName);
-
-    if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, 0) == SQLITE_OK) {
-
-        if (sqlite3_step(stmt) == SQLITE_ROW) {
-            int count = sqlite3_column_int(stmt, 0);
-            if (count == 0) {
-                sqlite3_finalize(stmt);
-                return 2;
-            }
+    sqlite3_bind_text(stmt, 1, product.ProductName, -1, SQLITE_STATIC);
+    
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        int count = sqlite3_column_int(stmt, 0);
+        printf("%d\n", count);
+        if (count > 0) {
+            sqlite3_finalize(stmt);
+            return -1;
         }
     }
 
     sqlite3_finalize(stmt);
 
-    char query[2000];
-    snprintf(query, sizeof(query), "INSERT INTO Products (ProductName, Description, Price, Stock, CategoryName) Values ('%s', '%s', %f, %d, '%s');", product.ProductName, product.Description, product.Price, product.Stock, product.CategoryName);
+    sqlite3_prepare_v2(db,
+        "SELECT COUNT(*) FROM Categories WHERE CategoryName = ?;",
+        -1, &stmt, NULL
+    );
 
-    char *errMsg = 0;
+    sqlite3_bind_text(stmt, 1, product.CategoryName, -1, SQLITE_STATIC);
     
-    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", errMsg);
-        sqlite3_free(errMsg);
-        return 1;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        int count = sqlite3_column_int(stmt, 0);
+        if (count == 0) {
+            sqlite3_finalize(stmt);
+            return 2;
+        }
     }
+
+    sqlite3_finalize(stmt);
+
+    sqlite3_prepare_v2(db,
+        "INSERT INTO Products (ProductName, Description, Price, Stock, CategoryName) Values (?, ?, ?, ?, ?);",
+        -1, &stmt, NULL
+    );
+
+    sqlite3_bind_text(stmt, 1, product.ProductName, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, product.Description, -1, SQLITE_STATIC);
+    sqlite3_bind_double(stmt, 3, product.Price);
+    sqlite3_bind_int(stmt, 4, product.Stock);
+    sqlite3_bind_text(stmt, 5, product.CategoryName, -1, SQLITE_STATIC);
+
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
     return 0;
 }
 
 int AddUser(sqlite3 *db, User user)
 {
-    char checkQuery[2000];
-    snprintf(checkQuery, sizeof(checkQuery), "SELECT COUNT(*) FROM Users WHERE UserName = '%s';", user.UserName);
     sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db,
+        "SELECT COUNT(*) FROM Users WHERE UserName = ?;",
+        -1, &stmt, NULL
+    );
 
-    if (sqlite3_prepare_v2(db, checkQuery, -1, &stmt, 0) == SQLITE_OK) {
-
-        if (sqlite3_step(stmt) == SQLITE_ROW) {
-            int count = sqlite3_column_int(stmt, 0);
-            if (count > 0) {
-                sqlite3_finalize(stmt);
-                return -1;
-            }
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        int count = sqlite3_column_int(stmt, 0);
+        if (count > 0) {
+            sqlite3_finalize(stmt);
+            return -1;
         }
     }
 
     sqlite3_finalize(stmt);
 
-    char query[2000];
+    sqlite3_prepare_v2(db,
+        "INSERT INTO Users (UserName, UserPassword) VALUES (?, ?);",
+        -1, &stmt, NULL
+    );
 
-    snprintf(query, sizeof(query), "INSERT INTO Users (UserName, UserPassword) VALUES ('%s', '%s');", user.UserName, user.UserPassword);
+    sqlite3_bind_text(stmt, 1, user.UserName, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, user.UserPassword, -1, SQLITE_STATIC);
 
-    char *errMsg = 0;
-    
-    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", errMsg);
-        sqlite3_free(errMsg);
-        return 1;
-    }
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
     return 0;
 }
 
 int UpdatePrice(sqlite3 *db, char productName[], double newPrice)
 {
-    char query[2000];
-    snprintf(query, sizeof(query), "UPDATE Products SET Price = %f WHERE ProductName = '%s';", newPrice, productName);
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db,
+        "UPDATE Products SET Price = ? WHERE ProductName = ?;",
+        -1, &stmt, NULL
+    );
 
-    char *errMsg = 0;
-    
-    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", errMsg);
-        sqlite3_free(errMsg);
-        return 1;
-    }
+    sqlite3_bind_double(stmt, 1, newPrice);
+    sqlite3_bind_text(stmt, 2, productName, -1, SQLITE_STATIC);
+
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
     int changes = sqlite3_changes(db);
     if (changes == 0)
@@ -364,17 +365,17 @@ int UpdatePrice(sqlite3 *db, char productName[], double newPrice)
 
 int UpdateStock(sqlite3 *db, char productName[], int newStock)
 {
-    char query[2000];
-    snprintf(query, sizeof(query), "UPDATE Products SET Stock = %d WHERE ProductName = '%s';", newStock, productName);
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db,
+        "UPDATE Products SET Stock = ? WHERE ProductName = ?;",
+        -1, &stmt, NULL
+    );
 
-    char *errMsg = 0;
-    
-    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", errMsg);
-        sqlite3_free(errMsg);
-        return 1;
-    }
+    sqlite3_bind_double(stmt, 1, newStock);
+    sqlite3_bind_text(stmt, 2, productName, -1, SQLITE_STATIC);
+
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
     int changes = sqlite3_changes(db);
     if (changes == 0)
@@ -387,17 +388,16 @@ int UpdateStock(sqlite3 *db, char productName[], int newStock)
 
 int DeleteCategoryByName(sqlite3 *db, char categoryName[])
 {
-    char query[2000];
-    snprintf(query, sizeof(query), "DELETE FROM Categories WHERE CategoryName = '%s';", categoryName);
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db,
+        "DELETE FROM Categories WHERE CategoryName = ?;",
+        -1, &stmt, NULL
+    );
 
-    char *errMsg = 0;
-    
-    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", errMsg);
-        sqlite3_free(errMsg);
-        return 1;
-    }
+    sqlite3_bind_text(stmt, 1, categoryName, -1, SQLITE_STATIC);
+
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
     int changes = sqlite3_changes(db);
     if (changes == 0)
@@ -410,17 +410,16 @@ int DeleteCategoryByName(sqlite3 *db, char categoryName[])
 
 int DeleteProductByName(sqlite3 *db, char productName[])
 {
-    char query[2000];
-    snprintf(query, sizeof(query), "DELETE FROM Products WHERE ProductName = '%s';", productName);
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db,
+        "DELETE FROM Products WHERE ProductName = ?;",
+        -1, &stmt, NULL
+    );
 
-    char *errMsg = 0;
-    
-    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", errMsg);
-        sqlite3_free(errMsg);
-        return 1;
-    }
+    sqlite3_bind_text(stmt, 1, productName, -1, SQLITE_STATIC);
+
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
     int changes = sqlite3_changes(db);
     if (changes == 0)
@@ -433,17 +432,16 @@ int DeleteProductByName(sqlite3 *db, char productName[])
 
 int DeleteUserByName(sqlite3 *db, char userName[])
 {
-    char query[2000];
-    snprintf(query, sizeof(query), "DELETE FROM Users WHERE UserName = '%s';", userName);
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db,
+        "DELETE FROM Users WHERE UserName = ?;",
+        -1, &stmt, NULL
+    );
 
-    char *errMsg = 0;
-    
-    if (sqlite3_exec(db, query, 0, 0, &errMsg) != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", errMsg);
-        sqlite3_free(errMsg);
-        return 1;
-    }
+    sqlite3_bind_text(stmt, 1, userName, -1, SQLITE_STATIC);
+
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
 
     int changes = sqlite3_changes(db);
     if (changes == 0)
